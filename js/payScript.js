@@ -1,6 +1,16 @@
+//* Variables para la desencriptación
 const base64ABuffer = buffer => Uint8Array.from(atob(buffer), c => c.charCodeAt(0));
 const LONGITUD_SAL = 16;
 const LONGITUD_VECTOR_INICIALIZACION = LONGITUD_SAL;
+/**
+ ** Clave basada en una contraseña dada, función ASYNC
+ * @param {String} contraseña -> Contraseña dada
+ * @param {Uint8Array} sal -> Variable randomizado para la derivaciones
+ * @param {int} iteraciones -> Cantidad de iteraciones
+ * @param {int} longitud -> longitud de la clave
+ * @param {String} hash -> Método de encriptación
+ * @param {String} algoritmo -> Algoritmo AES-CBC
+ */
 const derivacionDeClaveBasadaEnContrasenia = async (contraseña, sal, iteraciones, longitud, hash, algoritmo = 'AES-CBC') => {
     const encoder = new TextEncoder();
     let keyMaterial = await window.crypto.subtle.importKey(
@@ -23,6 +33,12 @@ const derivacionDeClaveBasadaEnContrasenia = async (contraseña, sal, iteracione
         ['encrypt', 'decrypt']
     );
 }
+/**
+ **Función para desencriptar la cookie
+ * @param {String} contraseña -> Contraseña dada por el usuario, el que uso para la encriptación
+ * @param {String} encriptadoEnBase64 -> Texto encriptado en Base 64 
+ * @returns 
+ */
 const desencriptar = async (contraseña, encriptadoEnBase64) => {
     const decoder = new TextDecoder();
     const datosEncriptados = base64ABuffer(encriptadoEnBase64);
@@ -36,11 +52,17 @@ const desencriptar = async (contraseña, encriptadoEnBase64) => {
     );
     return decoder.decode(datosDesencriptadosComoBuffer);
 }
+//* Variables que se necesitan para mostrar resultados
 var formulario = document.getElementById("dataInformation");
 var paymentResult = document.getElementById("paymentResult");
 var paymentResult2 = document.getElementById("paymentResult2");
 var paymentResult3 = document.getElementById("paymentResult3");
 
+/**
+ * *Función para obtener el valor de la cookie
+ * @param {String} name -> Nombre de la Cookie
+ * @returns {String, null} -> Regresa el valor de la cookie
+ */
 function getCookie(name) {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
@@ -52,10 +74,12 @@ function getCookie(name) {
     return null;
 }
 
+//* Evento submit para enviar los datos a Pay.php
 formulario.addEventListener('submit', async function (e) {
     try {
         e.preventDefault();
         var datos = new FormData(formulario);
+        //* Desencriptas la información
         const desencriptado = await desencriptar("secret", getCookie("paquete"));
         datos.append('membershipPack', desencriptado);
         fetch('../src/pay.php', {
@@ -75,6 +99,7 @@ formulario.addEventListener('submit', async function (e) {
 
 })
 
+//* Método que se aplica cuando se carga la página web
 const onLoad = async () => {
     try {
         var nameCookie = getCookie("paquete");
